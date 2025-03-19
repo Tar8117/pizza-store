@@ -11,7 +11,7 @@ class PizzaService:
     def create_order(self, user_id: str) -> Order:
         user = self.db.find_user(user_id)
         if not user:
-            raise ValueError("User not found")
+            raise LookupError("User not found")
         order = Order(order_id=str(uuid.uuid4()), status=OrderStatus.NEW, user=user, pizzas=[], address="")
         self.db.save_order(order)
         return order
@@ -26,9 +26,9 @@ class PizzaService:
     def add_pizza(self, order_id: str, pizza: Pizza):
         order = self.db.find_order(order_id)
         if not order:
-            raise ValueError("Order not found")
+            raise LookupError("Order not found")
         if order.status != OrderStatus.NEW:
-            raise ValueError("Cannot add pizza to a non-new order")
+            raise PermissionError("Cannot add pizza to a non-new order")
 
         order.pizzas.append(pizza)
         self.db.save_order(order)
@@ -36,36 +36,36 @@ class PizzaService:
     def remove_pizza(self, order_id: str, pizza_id: str):
         order = self.db.find_order(order_id)
         if not order:
-            raise ValueError("Order not found")
+            raise LookupError("Order not found")
         if order.status != OrderStatus.NEW:
-            raise ValueError("Order is being prepared and can't be modified")
+            raise PermissionError("Order is being prepared and can't be modified")
 
         order.pizzas = [p for p in order.pizzas if p.pizza_id != pizza_id]
 
     def update_address(self, order_id: str, new_address: str):
         order = self.db.find_order(order_id)
         if not order:
-            raise ValueError("Order not found")
+            raise LookupError("Order not found")
         if order.status != OrderStatus.NEW:
-            raise ValueError("Order is being prepared and the address can't be modified")
+            raise PermissionError("Order is being prepared and the address can't be modified")
 
         order.address = new_address
 
     def calc_price(self, order_id: str) -> float:
         order = self.db.find_order(order_id)
         if not order:
-            raise ValueError("Order not found")
+            raise LookupError("Order not found")
         total_price = 0
         for pizza in order.pizzas:
             base_pizza = self.db.find_base_pizza(pizza.base_pizza_id)
             if not base_pizza:
-                raise ValueError(f"Base pizza {pizza.base_pizza_id} not found")
+                raise LookupError(f"Base pizza {pizza.base_pizza_id} not found")
 
             price = base_pizza.price
             for topping_id in pizza.topping_ids:
                 topping = self.db.find_topping(topping_id)
                 if not topping:
-                    raise ValueError(f"Topping {topping_id} not found")
+                    raise LookupError(f"Topping {topping_id} not found")
 
                 price += topping.price
             total_price += price
@@ -74,9 +74,9 @@ class PizzaService:
     def on_payment_complete(self, order_id: str):
         order = self.db.find_order(order_id)
         if not order:
-            raise ValueError("Order not found")
+            raise LookupError("Order not found")
         if order.status != OrderStatus.ORDERED:
-            raise ValueError("Order can't be paid")
+            raise PermissionError("Order can't be paid")
 
         order.status = OrderStatus.PREPARING
         self.db.save_order(order)
@@ -86,7 +86,7 @@ class PizzaService:
         # IMPORTANT: status can be updated only after validation
         order = self.db.find_order(order_id)
         if not order:
-            raise ValueError("Order not found")
+            raise LookupError("Order not found")
         if order.status == OrderStatus.COMPLETED:
             raise ValueError("Order has already been completed")
         # print(f"Current order status: {order.status}, Trying to set: {status}")

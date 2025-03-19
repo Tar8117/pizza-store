@@ -22,9 +22,6 @@ class Db(ABC):
     def find_base_pizza(self, base_pizza_id: str) -> BasePizza:
         pass
 
-    # def add_user(self, user: User):
-    #     pass
-
     def save_user(self, user: User):
         pass
 
@@ -46,7 +43,6 @@ class InMemDb(Db):
         self.base_pizzas: Dict[str, BasePizza] = dict()
         self.toppings: Dict[str, Topping] = dict()
 
-    # Вопросы: Почему id не int, а str?
     def find_user(self, user_id: str) -> User:
         return self.users.get(user_id)
 

@@ -224,7 +224,6 @@ def test_pizza_service_happy_path(service, db, user, base_pizza, topping):
     service.update_order_status(order.order_id, OrderStatus.COMPLETED)
     assert order.status == OrderStatus.COMPLETED
 
-
 # from .service.pizza_service import PizzaService
 # from .model.db import InMemDb
 # from .model.entities import *
