@@ -1,38 +1,6 @@
-from typing import Dict, Optional
-from abc import ABC, abstractmethod
-
+from typing import Dict
+from .db_interface import Db
 from .entities import *
-
-
-# Interface for db
-class Db(ABC):
-    @abstractmethod
-    def find_user(self, user_id: str) -> Optional[User]:
-        pass
-
-    def find_order(self, order_id: str) -> Order:
-        pass
-
-    def find_pizza(self, pizza_id: str) -> Pizza:
-        pass
-
-    def find_topping(self, topping_id: str):
-        pass
-
-    def find_base_pizza(self, base_pizza_id: str) -> BasePizza:
-        pass
-
-    def save_user(self, user: User):
-        pass
-
-    def save_order(self, order: Order):
-        pass
-
-    def save_topping(self, topping: Topping):
-        pass
-
-    def save_base_pizza(self, base_pizza: BasePizza):
-        pass
 
 
 class InMemDb(Db):
