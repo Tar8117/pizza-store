@@ -1,7 +1,7 @@
 import uuid
 
 from ..model.entities import Order, User, Pizza, OrderStatus
-from ..model.db import Db
+from ..model.in_mem_db import Db
 
 
 class PizzaService:

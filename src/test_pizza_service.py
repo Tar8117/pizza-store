@@ -1,7 +1,7 @@
 import pytest
 import uuid
 from .model.entities import OrderStatus, Pizza, BasePizza, Topping
-from .model.db import InMemDb
+from .model.in_mem_db import InMemDb
 from .service.pizza_service import PizzaService
 
 
