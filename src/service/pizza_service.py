@@ -2,28 +2,29 @@ import uuid
 
 from ..model.entities import Order, User, Pizza, OrderStatus
 from ..model.in_mem_db import Db
+from uuid import UUID
 
 
 class PizzaService:
     def __init__(self, db: Db):
         self.db = db
 
-    def create_order(self, user_id: str) -> Order:
+    def create_order(self, user_id: UUID) -> Order:
         user = self.db.find_user(user_id)
         if not user:
             raise LookupError("User not found")
-        order = Order(order_id=str(uuid.uuid4()), status=OrderStatus.NEW, user=user, pizzas=[], address="")
+        order = Order(order_id=uuid.uuid4(), status=OrderStatus.NEW, user=user, pizzas=[], address="")
         self.db.save_order(order)
         return order
 
     def add_user(self, name: str, phone_number: str) -> User:
         if not (phone_number.startswith("+7") and len(phone_number) == 12 and phone_number[1:].isdigit()):
             raise ValueError("Invalid phone number format. Must be +79XXXXXXXXX")
-        user = User(user_id=str(uuid.uuid4()), name=name, phone_number=phone_number)
+        user = User(user_id=uuid.uuid4(), name=name, phone_number=phone_number)
         self.db.save_user(user)
         return user
 
-    def add_pizza(self, order_id: str, pizza: Pizza):
+    def add_pizza(self, order_id: UUID, pizza: Pizza):
         order = self.db.find_order(order_id)
         if not order:
             raise LookupError("Order not found")
@@ -33,7 +34,7 @@ class PizzaService:
         order.pizzas.append(pizza)
         self.db.save_order(order)
 
-    def remove_pizza(self, order_id: str, pizza_id: str):
+    def remove_pizza(self, order_id: UUID, pizza_id: UUID):
         order = self.db.find_order(order_id)
         if not order:
             raise LookupError("Order not found")
@@ -42,7 +43,7 @@ class PizzaService:
 
         order.pizzas = [p for p in order.pizzas if p.pizza_id != pizza_id]
 
-    def update_address(self, order_id: str, new_address: str):
+    def update_address(self, order_id: UUID, new_address: str):
         order = self.db.find_order(order_id)
         if not order:
             raise LookupError("Order not found")
@@ -51,7 +52,7 @@ class PizzaService:
 
         order.address = new_address
 
-    def calc_price(self, order_id: str) -> float:
+    def calc_price(self, order_id: UUID) -> float:
         order = self.db.find_order(order_id)
         if not order:
             raise LookupError("Order not found")
@@ -71,7 +72,7 @@ class PizzaService:
             total_price += price
         return total_price
 
-    def on_payment_complete(self, order_id: str):
+    def on_payment_complete(self, order_id: UUID):
         order = self.db.find_order(order_id)
         if not order:
             raise LookupError("Order not found")
@@ -81,7 +82,7 @@ class PizzaService:
         order.status = OrderStatus.PREPARING
         self.db.save_order(order)
 
-    def update_order_status(self, order_id: str, status: OrderStatus):
+    def update_order_status(self, order_id: UUID, status: OrderStatus):
         # TODO: validate status
         # IMPORTANT: status can be updated only after validation
         order = self.db.find_order(order_id)

@@ -2,37 +2,40 @@ import pytest
 import uuid
 from .model.entities import OrderStatus, Pizza, BasePizza, Topping
 from .model.in_mem_db import InMemDb
+from .model.orm_models import BasePizzaOrm, ToppingOrm, UserOrm
+from .model.sqlalchemy_db import SqlAlchemyDbSync
 from .service.pizza_service import PizzaService
 
 
-# Фикстура создает in-memory базу данных
 @pytest.fixture
 def db():
-    return InMemDb()
+    return SqlAlchemyDbSync()
 
 
-# Фикстура создаёт PizzaService и использует базу db
 @pytest.fixture
 def service(db):
     return PizzaService(db)
 
 
-# Фикстура создает пользователя через PizzaService
 @pytest.fixture
 def user(service):
-    return service.add_user("Elon Mask", "+71234567890")
+    return service.add_user(name="Oliver", phone_number="+79161234567")
 
 
 # Фикстура создаёт базовую пиццу
 @pytest.fixture
-def base_pizza():
-    return BasePizza(base_pizza_id=uuid.uuid4(), name="Margherita", price=10.0)
+def base_pizza(db):
+    base_pizza = BasePizza(base_pizza_id=uuid.uuid4(), name="Margherita", price=10.0)
+    db.save_base_pizza(base_pizza)
+    return base_pizza
 
 
 # Фикстура создаёт топпинг
 @pytest.fixture
-def topping(service):
-    return Topping(topping_id=uuid.uuid4(), name="Cheese", price=2.0)
+def topping(db):
+    topping = Topping(topping_id=uuid.uuid4(), name="Cheese", price=2.0)
+    db.save_topping(topping)
+    return topping
 
 
 # Фикстура создаёт новый заказ
@@ -223,121 +226,3 @@ def test_pizza_service_happy_path(service, db, user, base_pizza, topping):
 
     service.update_order_status(order.order_id, OrderStatus.COMPLETED)
     assert order.status == OrderStatus.COMPLETED
-
-# from .service.pizza_service import PizzaService
-# from .model.db import InMemDb
-# from .model.entities import *
-# from typing import List
-# import uuid
-# import pytest
-#
-#
-# def deliver_order(pizza_service: PizzaService, order_id: str):
-#     statuses = [
-#         OrderStatus.PREPARING,
-#         OrderStatus.READY,
-#         OrderStatus.DELIVERING,
-#         OrderStatus.DELIVERED
-#     ]
-#     for status in statuses:
-#         pizza_service.update_order_status(order_id, status)
-#
-#
-# def test_add_user():
-#     db = InMemDb()
-#     pizza_service = PizzaService(db)
-#     user = pizza_service.add_user("Name", 79003002010)
-#     assert user is not None
-#     assert user.phone_number == 79003002010
-#     assert db.find_user(user.user_id) == user
-#
-#
-# def test_create_order():
-#     db = InMemDb()
-#     pizza_service = PizzaService(db)
-#     user = pizza_service.add_user("Name", 79003002010)
-#     order = pizza_service.create_order(user.user_id)
-#     assert order is not None
-#     assert order.user.user_id == user.user_id
-#     assert db.find_order(order.order_id) == order
-#
-#
-# def test_add_pizza():
-#     db = InMemDb()
-#     pizza_service = PizzaService(db)
-#     user = pizza_service.add_user("Name", 79003002010)
-#     order = pizza_service.create_order(user.user_id)
-#     base_pizza = BasePizza("1", "Pepperoni", 10.0)
-#     db.save_base_pizza(base_pizza)
-#     pizza = Pizza(str(uuid.uuid4()), base_pizza.base_pizza_id, [])
-#     pizza_service.add_pizza(order.order_id, pizza)
-#     assert len(db.find_order(order.order_id).pizzas) == 1
-#
-#
-# def test_update_address():
-#     db = InMemDb()
-#     pizza_service = PizzaService(db)
-#     user = pizza_service.add_user("Name", 79003002010)
-#     order = pizza_service.create_order(user.user_id)
-#     pizza_service.update_address(order.order_id, "New Address")
-#     assert db.find_order(order.order_id).address == "New Address"
-#
-#
-# def test_update_order_status():
-#     db = InMemDb()
-#     pizza_service = PizzaService(db)
-#     user = pizza_service.add_user("Name", 79003002010)
-#     order = pizza_service.create_order(user.user_id)
-#     pizza_service.update_order_status(order.order_id, OrderStatus.ORDERED)
-#     assert db.find_order(order.order_id).status == OrderStatus.ORDERED
-#
-#     with pytest.raises(ValueError, match="We can't skip any status"):
-#         pizza_service.update_order_status(order.order_id, OrderStatus.COMPLETED)
-#
-#
-# def test_calc_price():
-#     db = InMemDb()
-#     pizza_service = PizzaService(db)
-#     user = pizza_service.add_user("Name", 79003002010)
-#     order = pizza_service.create_order(user.user_id)
-#     base_pizza = BasePizza("1", "Pepperoni", 10.0)
-#     db.save_base_pizza(base_pizza)
-#     pizza = Pizza(str(uuid.uuid4()), base_pizza.base_pizza_id, [])
-#     pizza_service.add_pizza(order.order_id, pizza)
-#     price = pizza_service.calc_price(order.order_id)
-#     assert price == 10.0
-#
-#
-# def test_on_payment_complete():
-#     db = InMemDb()
-#     pizza_service = PizzaService(db)
-#     user = pizza_service.add_user("Name", 79003002010)
-#     order = pizza_service.create_order(user.user_id)
-#     pizza_service.update_order_status(order.order_id, OrderStatus.ORDERED)
-#     pizza_service.on_payment_complete(order.order_id)
-#     assert db.find_order(order.order_id).status == OrderStatus.P
-#
-#
-# def test_pizza_service_happy_path():
-#     db = InMemDb()
-#     pepperoni = BasePizza("1", "Pepperoni", 10.0)
-#     db.save_base_pizza(pepperoni)
-#     pineapple = Topping("2", "Pineapple", 2.0)
-#     db.save_topping(pineapple)
-#     pizza_service = PizzaService(db)
-#     user = pizza_service.add_user("Name", 79003002010)
-#     order = pizza_service.create_order(user.user_id)
-#     pepperoni_pineapple = Pizza(
-#         str(uuid.uuid4()),
-#         pepperoni.base_pizza_id,
-#         [pineapple.topping_id]
-#     )
-#     pizza_service.add_pizza(order.order_id, pepperoni_pineapple)
-#     pizza_service.update_address(order.order_id, "Russia, Moscow, Red Square, 1")
-#     pizza_service.update_order_status(order.order_id, OrderStatus.ORDERED)
-#     deliver_order(pizza_service, order.order_id)
-#     price = pizza_service.calc_price(order.order_id)
-#     assert price == 12.0
-#     pizza_service.on_payment_complete(order.order_id)
-#     pizza_service.update_order_status(order.order_id, OrderStatus.COMPLETED)
-#     assert pizza_service.db.find_order(order.order_id).status == OrderStatus.COMPLETED
