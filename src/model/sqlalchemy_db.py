@@ -54,7 +54,6 @@ class SqlAlchemyDbSync(Db):
     def save_user(self, user: User) -> None:
         with sync_session_factory() as session:
             orm_user = UserOrm.from_entity(user)
-            # print(">>> saving user with:", user.user_id, type(user.user_id))
             stmt = insert(UserOrm).values(
                 user_id=orm_user.user_id,
                 name=orm_user.name,
