@@ -1,7 +1,7 @@
 import uuid
 
-from ..model.entities import Order, User, Pizza, OrderStatus
-from ..model.in_mem_db import Db
+from model.entities import Order, User, Pizza, OrderStatus
+from model.in_mem_db import Db
 from uuid import UUID
 
 

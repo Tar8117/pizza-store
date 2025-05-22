@@ -1,6 +1,6 @@
 from typing import Optional
 from abc import ABC, abstractmethod
-from .entities import User, Order, Pizza, Topping, BasePizza
+from model.entities import User, Order, Pizza, Topping, BasePizza
 from uuid import UUID
 
 

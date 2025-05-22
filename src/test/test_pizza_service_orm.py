@@ -1,10 +1,18 @@
 import pytest
 import uuid
-from .model.entities import OrderStatus, Pizza, BasePizza, Topping
-from .model.in_mem_db import InMemDb
-from .model.orm_models import BasePizzaOrm, ToppingOrm, UserOrm
-from .model.sqlalchemy_db import SqlAlchemyDbSync
-from .service.pizza_service import PizzaService
+
+import sys
+from pathlib import Path
+source_root = Path(__file__).resolve().parent.parent
+print(source_root)
+sys.path.append(str(source_root))
+print(sys.path)
+
+from model.entities import OrderStatus, Pizza, BasePizza, Topping
+from model.in_mem_db import InMemDb
+from model.orm_models import BasePizzaOrm, ToppingOrm, UserOrm
+from model.sqlalchemy_db import SqlAlchemyDbSync
+from service.pizza_service import PizzaService
 
 
 @pytest.fixture

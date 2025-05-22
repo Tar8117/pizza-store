@@ -4,9 +4,9 @@ from sqlalchemy.dialects.postgresql import UUID as UUID_DB, ARRAY
 from .entities import User, Order, Pizza, Topping, BasePizza
 from enum import Enum as EnumPy
 from typing import Annotated, List
-# from .entities import User, Order, Pizza, BasePizza, Topping
+# from model.entities import User, Order, Pizza, BasePizza, Topping
 from uuid import UUID
-from .entities import OrderStatus
+from model.entities import OrderStatus
 
 
 uuid_pk = Annotated[UUID, mapped_column(UUID_DB(as_uuid=True), primary_key=True)]
@@ -14,16 +14,6 @@ uuid_pk = Annotated[UUID, mapped_column(UUID_DB(as_uuid=True), primary_key=True)
 
 class Base(DeclarativeBase):
     pass
-
-
-# class OrderStatus(EnumPy):
-#     NEW = "NEW"
-#     ORDERED = "ORDERED"
-#     PREPARING = "PREPARING"
-#     READY = "READY"
-#     DELIVERING = "DELIVERING"
-#     DELIVERED = "DELIVERED"
-#     COMPLETED = "COMPLETED"
 
 
 pizza_topping = Table(

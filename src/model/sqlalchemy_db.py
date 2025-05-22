@@ -2,16 +2,14 @@ from typing import Optional
 from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.dialects.postgresql import insert
 from uuid import UUID
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from .entities import User, Order, Pizza, Topping, BasePizza
-from .db_interface import Db
-from .orm_models import UserOrm, OrderOrm, PizzaOrm, BasePizzaOrm, ToppingOrm
-from ..db_engines import sync_session_factory, async_session_factory  # type: ignore
+from model.entities import User, Order, Pizza, Topping, BasePizza
+from model.db_interface import Db
+from model.orm_models import UserOrm, OrderOrm, PizzaOrm, BasePizzaOrm, ToppingOrm
+from db_engines import sync_session_factory, async_session_factory  # type: ignore
 
 
 class SqlAlchemyDbSync(Db):
-
     def find_user(self, user_id: UUID) -> Optional[User]:
         with sync_session_factory() as session:
             # return session.get(UserOrm, user_id)
