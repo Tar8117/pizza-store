@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from .entities import User, Order, Pizza, Topping, BasePizza
 from .db_interface import Db
-from .orm_models import UserOrm, OrderOrm, PizzaOrm, BasePizzaOrm, ToppingOrm
+from .orm_models import UserOrm, OrderOrm, PizzaOrm, BasePizzaOrm, ToppingOrm, pizza_topping
 from ..db_engines import sync_session_factory, async_session_factory  # type: ignore
 
 
