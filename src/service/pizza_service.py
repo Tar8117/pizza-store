@@ -42,6 +42,7 @@ class PizzaService:
             raise PermissionError("Order is being prepared and can't be modified")
 
         order.pizzas = [p for p in order.pizzas if p.pizza_id != pizza_id]
+        self.db.save_order(order)
 
     def update_address(self, order_id: UUID, new_address: str):
         order = self.db.find_order(order_id)
@@ -51,6 +52,7 @@ class PizzaService:
             raise PermissionError("Order is being prepared and the address can't be modified")
 
         order.address = new_address
+        self.db.save_order(order)
 
     def calc_price(self, order_id: UUID) -> float:
         order = self.db.find_order(order_id)
