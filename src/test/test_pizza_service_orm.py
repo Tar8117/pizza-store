@@ -1,3 +1,5 @@
+from typing import final
+
 import pytest
 import uuid
 
@@ -56,6 +58,7 @@ def pizza(base_pizza, topping):
 def order_with_pizza(service, order, base_pizza, topping):
     pizza = Pizza(pizza_id=uuid.uuid4(), base_pizza_id=base_pizza.base_pizza_id, topping_ids=[topping.topping_id])
     service.add_pizza(order.order_id, pizza)
+    order = service.find_order(order.order_id)
     return order
 
 
@@ -107,7 +110,7 @@ def test_calc_price(service, order, pizza, base_pizza, topping):
 
 # Тест успешной оплаты заказа
 def test_on_payment_complete(service, order):
-    order.status = OrderStatus.ORDERED
+    service.update_order_status(order.order_id, OrderStatus.ORDERED)
     service.on_payment_complete(order.order_id)
     updated_order = service.db.find_order(order.order_id)
     assert updated_order.status == OrderStatus.PREPARING
@@ -146,6 +149,7 @@ def test_create_order_with_address(service, user):
     assert order.address == ""
 
     service.update_address(order.order_id, "Moscow, Pizza Street, 52")
+    order = service.find_order(order.order_id)
     assert order.address == "Moscow, Pizza Street, 52"
 
 
@@ -154,10 +158,13 @@ def test_order_status_change(service, user):
     order = service.create_order(user.user_id)
     assert order.status == OrderStatus.NEW
     service.update_order_status(order.order_id, OrderStatus.ORDERED)
+    order = service.find_order(order.order_id)
     assert order.status == OrderStatus.ORDERED
     service.update_order_status(order.order_id, OrderStatus.PREPARING)
+    order = service.find_order(order.order_id)
     assert order.status == OrderStatus.PREPARING
     service.update_order_status(order.order_id, OrderStatus.READY)
+    order = service.find_order(order.order_id)
     assert order.status == OrderStatus.READY
 
     with pytest.raises(ValueError, match="We can't skip any status"):
@@ -171,6 +178,7 @@ def test_remove_pizza_from_order(service, order_with_pizza):
 
     assert len(order.pizzas) == 1
     service.remove_pizza(order.order_id, pizza_id)
+    order = service.find_order(order.order_id)
     assert len(order.pizzas) == 0
 
 
@@ -206,10 +214,12 @@ def test_pizza_service_happy_path(service, db, user, base_pizza, topping):
 
     # Устанавливаем и проверяем статус заказа (должно быть ORDERED на данном этапе, чтобы оплата прошла)
     service.update_order_status(order.order_id, OrderStatus.ORDERED)
+    order = service.find_order(order.order_id)
     assert order.status == OrderStatus.ORDERED
 
     # Оплачиваем и подтверждаем оплату
     service.on_payment_complete(order.order_id)
+    order = service.find_order(order.order_id)
 
     # После оплаты начинаем готовить и менять статусы
     # Мы не меняем статус на PREPARED, т.к. это происходит в методе on_payment_complete
@@ -217,13 +227,17 @@ def test_pizza_service_happy_path(service, db, user, base_pizza, topping):
     assert order.status == OrderStatus.PREPARING
 
     service.update_order_status(order.order_id, OrderStatus.READY)
+    order = service.find_order(order.order_id)
     assert order.status == OrderStatus.READY
 
     service.update_order_status(order.order_id, OrderStatus.DELIVERING)
+    order = service.find_order(order.order_id)
     assert order.status == OrderStatus.DELIVERING
 
     service.update_order_status(order.order_id, OrderStatus.DELIVERED)
+    order = service.find_order(order.order_id)
     assert order.status == OrderStatus.DELIVERED
 
     service.update_order_status(order.order_id, OrderStatus.COMPLETED)
+    order = service.find_order(order.order_id)
     assert order.status == OrderStatus.COMPLETED

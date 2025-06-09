@@ -17,6 +17,9 @@ class PizzaService:
         self.db.save_order(order)
         return order
 
+    def find_order(self, order_id: UUID) -> Order:
+        return self.db.find_order(order_id)
+
     def add_user(self, name: str, phone_number: str) -> User:
         if not (phone_number.startswith("+7") and len(phone_number) == 12 and phone_number[1:].isdigit()):
             raise ValueError("Invalid phone number format. Must be +79XXXXXXXXX")
@@ -40,7 +43,6 @@ class PizzaService:
             raise LookupError("Order not found")
         if order.status != OrderStatus.NEW:
             raise PermissionError("Order is being prepared and can't be modified")
-
         order.pizzas = [p for p in order.pizzas if p.pizza_id != pizza_id]
         self.db.save_order(order)
 
