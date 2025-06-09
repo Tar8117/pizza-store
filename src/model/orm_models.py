@@ -15,22 +15,6 @@ uuid_pk = Annotated[UUID, mapped_column(UUID_DB(as_uuid=True), primary_key=True)
 class Base(DeclarativeBase):
     pass
 
-
-pizza_topping = Table(
-    "pizza_topping",
-    Base.metadata,
-    Column("pizza_id", ForeignKey("pizzas.pizza_id", ondelete="CASCADE"), primary_key=True),
-    Column("topping_id", ForeignKey("toppings.topping_id", ondelete="CASCADE"), primary_key=True),
-)
-
-pizza_order = Table(
-    "pizza_order",
-    Base.metadata,
-    Column("pizza_id", ForeignKey("pizzas.pizza_id", ondelete="CASCADE"), primary_key=True),
-    Column("order_id", ForeignKey("orders.order_id", ondelete="CASCADE"), primary_key=True),
-)
-
-
 class UserOrm(Base):
     __tablename__ = "users"
 
@@ -68,31 +52,19 @@ class OrderOrm(Base):
         "UserOrm",
         passive_deletes=True,
     )
-    pizzas: Mapped[List["PizzaOrm"]] = relationship(
-        "PizzaOrm",
-        secondary=pizza_order,
-    )
-
-    def to_entity(self) -> Order:
-        return Order(
-            order_id=self.order_id,
-            status=OrderStatus(self.status.value),
-            user=self.user.to_entity(),
-            pizzas=[pizza.to_entity() for pizza in self.pizzas],
-            address=self.address
-        )
+    pizza_ids: Mapped[List[uuid_pk]] = mapped_column(ARRAY(String), nullable=False)
 
     @classmethod
     def from_entity(cls, order: Order, session: Session) -> "OrderOrm":
         user_orm = UserOrm.from_entity(order.user)
 
-        pizzas = [PizzaOrm.from_entity(pizza, session) for pizza in order.pizzas]
+        pizza_ids = [pizza.pizza_id for pizza in order.pizzas]
 
         return cls(
             order_id=order.order_id,
             status=OrderStatus(order.status.value),
             user=user_orm,
-            pizzas=pizzas,
+            pizza_ids=pizza_ids,
             address=order.address,
         )
 
@@ -105,51 +77,22 @@ class PizzaOrm(Base):
     __tablename__ = "pizzas"
 
     pizza_id: Mapped[uuid_pk]
-    order_id: Mapped[UUID] = mapped_column(ForeignKey("orders.order_id", ondelete="CASCADE"))
-    order: Mapped["OrderOrm"] = relationship(
-        "OrderOrm",
-        passive_deletes=True,
-    )
     base_pizza_id: Mapped[UUID] = mapped_column(ForeignKey("base_pizzas.base_pizza_id", ondelete="CASCADE"))
-    base_pizza: Mapped["BasePizzaOrm"] = relationship(
-        "BasePizzaOrm",
-        passive_deletes=True,
-    )
-    toppings: Mapped[List["ToppingOrm"]] = relationship(
-        "ToppingOrm",
-        secondary=pizza_topping,
-        passive_deletes=True
-    )
+    topping_ids: Mapped[list[uuid_pk]] = mapped_column(ARRAY(String), nullable=False)
 
     def to_entity(self) -> Pizza:
         return Pizza(
             pizza_id=self.pizza_id,
             base_pizza_id=self.base_pizza_id,
-            topping_ids=[topping.topping_id for topping in self.toppings]
+            topping_ids=self.topping_ids
         )
 
     @classmethod
     def from_entity(cls, pizza: Pizza, session: Session) -> "PizzaOrm":
-        base_pizza = session.execute(
-            select(BasePizzaOrm).where(BasePizzaOrm.base_pizza_id == pizza.base_pizza_id)
-        ).scalar_one_or_none()
-        if not base_pizza:
-            raise ValueError(f"BasePizza with id {pizza.base_pizza_id} not found")
-
-        toppings = []
-        if pizza.topping_ids:
-            toppings = session.execute(
-                select(ToppingOrm).where(ToppingOrm.topping_id.in_(pizza.topping_ids))
-            ).scalars().all()
-
-            missing_ids = set(pizza.topping_ids) - {t.topping_id for t in toppings}
-            if missing_ids:
-                raise ValueError(f"Toppings with ids {missing_ids} not found")
-
         return cls(
             pizza_id=pizza.pizza_id,
-            base_pizza=base_pizza,
-            toppings=toppings
+            base_pizza_id=pizza.base_pizza_id,
+            topping_ids=pizza.topping_ids
         )
 
     def __repr__(self):
@@ -188,11 +131,6 @@ class ToppingOrm(Base):
     topping_id: Mapped[uuid_pk]
     name: Mapped[str] = mapped_column(nullable=False)
     price: Mapped[float] = mapped_column(nullable=False)
-    pizzas: Mapped[List[PizzaOrm]] = relationship(
-        "PizzaOrm",
-        secondary=pizza_topping,
-        passive_deletes=True,
-    )
 
     def to_entity(self) -> Topping:
         return Topping(
