@@ -7,7 +7,7 @@ from model.orm_models import UserOrm, OrderOrm, PizzaOrm, BasePizzaOrm, ToppingO
 from sqlalchemy import delete, select
 
 # Создать таблицы
-# Base.metadata.create_all(bind=sync_engine)
+Base.metadata.create_all(bind=sync_engine)
 # print("✅ Таблицы созданы!")
 
 # Удалить таблицы

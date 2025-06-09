@@ -1,6 +1,6 @@
 from typing import Optional
 from abc import ABC, abstractmethod
-from .entities import User, Order, Pizza, Topping, BasePizza
+from model.entities import User, Order, Pizza, Topping, BasePizza
 from uuid import UUID
 
 
@@ -50,4 +50,9 @@ class Db(ABC):
     @abstractmethod
     def save_base_pizza(self, base_pizza: BasePizza) -> None:
         """Save base pizza"""
+        pass
+
+    @abstractmethod
+    def save_pizza(self, pizza: Pizza) -> None:
+        """Save pizza"""
         pass

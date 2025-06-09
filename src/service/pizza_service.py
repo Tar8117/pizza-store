@@ -1,7 +1,7 @@
 import uuid
 
-from ..model.entities import Order, User, Pizza, OrderStatus
-from ..model.in_mem_db import Db
+from model.entities import Order, User, Pizza, OrderStatus
+from model.in_mem_db import Db
 from uuid import UUID
 
 
@@ -16,6 +16,9 @@ class PizzaService:
         order = Order(order_id=uuid.uuid4(), status=OrderStatus.NEW, user=user, pizzas=[], address="")
         self.db.save_order(order)
         return order
+
+    def find_order(self, order_id: UUID) -> Order:
+        return self.db.find_order(order_id)
 
     def add_user(self, name: str, phone_number: str) -> User:
         if not (phone_number.startswith("+7") and len(phone_number) == 12 and phone_number[1:].isdigit()):
@@ -40,8 +43,8 @@ class PizzaService:
             raise LookupError("Order not found")
         if order.status != OrderStatus.NEW:
             raise PermissionError("Order is being prepared and can't be modified")
-
         order.pizzas = [p for p in order.pizzas if p.pizza_id != pizza_id]
+        self.db.save_order(order)
 
     def update_address(self, order_id: UUID, new_address: str):
         order = self.db.find_order(order_id)
@@ -51,6 +54,7 @@ class PizzaService:
             raise PermissionError("Order is being prepared and the address can't be modified")
 
         order.address = new_address
+        self.db.save_order(order)
 
     def calc_price(self, order_id: UUID) -> float:
         order = self.db.find_order(order_id)

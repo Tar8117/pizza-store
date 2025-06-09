@@ -1,6 +1,6 @@
 from typing import Dict
-from .db_interface import Db
-from .entities import *
+from model.db_interface import Db
+from model.entities import *
 from uuid import UUID
 
 
