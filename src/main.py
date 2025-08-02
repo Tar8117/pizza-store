@@ -4,15 +4,20 @@ from uuid import UUID, uuid4
 from db_engines import sync_session_factory
 from model.sqlalchemy_db import SqlAlchemyDbSync
 from model.orm_models import UserOrm, OrderOrm, PizzaOrm, BasePizzaOrm, ToppingOrm, OrderStatus
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, text
 
 # Создать таблицы
 Base.metadata.create_all(bind=sync_engine)
-# print("✅ Таблицы созданы!")
+print("✅ Таблицы созданы!")
 
 # Удалить таблицы
 # Base.metadata.drop_all(bind=sync_engine)
 # print("🗑️ Таблицы удалены!")
+
+# Удалить таблицы
+# with sync_engine.connect() as conn:
+#     conn.execute(text("DROP SCHEMA public CASCADE"))
+#     print("🗑️ Все таблицы удалены с CASCADE!")
 
 # Разные запросы.
 # Поменять номер телефона пользователя:
@@ -40,7 +45,7 @@ Base.metadata.create_all(bind=sync_engine)
 #     for pizza in stmt:
 #         print(pizza.name)
 #
-db = SqlAlchemyDbSync()
+# db = SqlAlchemyDbSync()
 # with sync_session_factory() as test_find_user:
 #     stmt = db.find_user(UUID("3bd80fcf-7f4b-4687-8fe4-c8bc96e686d4"))
 #     stmt2 = db.find_user(UUID("5bb07e9d-ef81-44e3-995e-5de3d3bfc1ba"))

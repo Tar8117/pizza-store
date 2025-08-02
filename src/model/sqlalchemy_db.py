@@ -2,7 +2,7 @@ from typing import Optional
 from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.dialects.postgresql import insert
 from uuid import UUID
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from model.entities import User, Order, Pizza, Topping, BasePizza
 from model.db_interface import Db
 from model.orm_models import UserOrm, OrderOrm, PizzaOrm, BasePizzaOrm, ToppingOrm
@@ -14,6 +14,12 @@ class SqlAlchemyDbSync(Db):
         with sync_session_factory() as session:
             orm_user = session.get(UserOrm, user_id)
             return orm_user.to_entity() if orm_user else None
+
+    def find_user_by_phone(self, phone_number: str) -> Optional[User]:
+        with sync_session_factory() as session:
+            stmt = select(UserOrm).where(UserOrm.phone_number == phone_number)
+            result = session.execute(stmt).scalar_one_or_none()
+            return result.to_entity() if result else None
 
     def find_order(self, order_id: UUID) -> Optional[Order]:
         with sync_session_factory() as session:
@@ -137,5 +143,11 @@ class SqlAlchemyDbSync(Db):
                     "price": orm_base_pizza.price,
                 }
             )
+            session.execute(stmt)
+            session.commit()
+
+    def delete_pizza(self, pizza_id: UUID) -> None:
+        with sync_session_factory() as session:
+            stmt = delete(PizzaOrm).where(PizzaOrm.pizza_id == pizza_id)
             session.execute(stmt)
             session.commit()

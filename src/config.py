@@ -4,6 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 env_path = Path(__file__).resolve().parent.parent / ".env"
 
+
 class Settings(BaseSettings):
     DB_HOST: str
     DB_PORT: int

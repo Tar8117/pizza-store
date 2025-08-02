@@ -9,43 +9,32 @@ from model.orm_models import UserOrm, OrderOrm, PizzaOrm, BasePizzaOrm, ToppingO
 # Такой способ более "одноразовый"
 
 if __name__ == '__main__':
+
     with sync_session_factory() as session:
-        # 1. Создаём базовые пиццы и топпинги
-        base_pepperoni = BasePizzaOrm(base_pizza_id=uuid4(), name="Pepperoni", price=8.0)
-        base_margherita = BasePizzaOrm(base_pizza_id=uuid4(), name="Margherita", price=6.5)
+        # Очистка предыдущих данных (если нужно)
+        # session.execute(delete(UserOrm))
+        # session.execute(delete(BasePizzaOrm))
+        # session.execute(delete(ToppingOrm))
 
-        topping_cheese = ToppingOrm(topping_id=uuid4(), name="Extra Cheese", price=1.5)
-        topping_olives = ToppingOrm(topping_id=uuid4(), name="Olives", price=1.0)
-        topping_peppers = ToppingOrm(topping_id=uuid4(), name="Peppers", price=0.8)
+        # Примеры пользователей
+        users = [
+            UserOrm(user_id=uuid4(), name="Alice", phone_number="+79111111111"),
+            UserOrm(user_id=uuid4(), name="Bob", phone_number="+79222222222")
+        ]
 
-        # 2. Создаём пользователя
-        user = UserOrm(user_id=uuid4(), name="Alice", phone_number="+79261234567")
-        user2 = UserOrm(user_id=uuid4(), name="Bob", phone_number="987654321")
+        # Примеры базовых пицц
+        base_pizzas = [
+            BasePizzaOrm(base_pizza_id=uuid4(), name="Margherita", price=9.99),
+            BasePizzaOrm(base_pizza_id=uuid4(), name="Pepperoni", price=11.99)
+        ]
 
-        # 3. Создаём заказ
-        order = OrderOrm(order_id=uuid4(), status=OrderStatus.NEW, address="123 Main St", user=user)
-        order2 = OrderOrm(order_id=uuid4(), status=OrderStatus.NEW, address="456 Broadway", user=user2)
+        # Примеры топпингов
+        toppings = [
+            ToppingOrm(topping_id=uuid4(), name="Cheese", price=1.5),
+            ToppingOrm(topping_id=uuid4(), name="Mushrooms", price=2.0),
+            ToppingOrm(topping_id=uuid4(), name="Olives", price=1.2)
+        ]
 
-        # 4. Создаём пиццу в заказе
-        pizza = PizzaOrm(
-            pizza_id=uuid4(),
-            order=order,
-            base_pizza=base_pepperoni,
-            toppings=[topping_cheese, topping_olives],
-        )
-
-        pizza2 = PizzaOrm(
-            pizza_id=uuid4(),
-            order=order2,
-            base_pizza=base_margherita,
-            toppings=[topping_olives, topping_peppers],
-        )
-
-        # 5. Добавляем всё в сессию
-        session.add_all([
-            base_pepperoni, base_margherita, topping_cheese, topping_olives, topping_peppers, user, user2, order, order2,
-            pizza, pizza2
-        ])
+        session.add_all(users + base_pizzas + toppings)
         session.commit()
-
-        print("✅ Примерные данные добавлены!")
+        print("✅ База успешно заполнена тестовыми данными")

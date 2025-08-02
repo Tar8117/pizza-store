@@ -1,5 +1,7 @@
 import uuid
+from typing import Union
 
+from api.schemas import PizzaIn
 from model.entities import Order, User, Pizza, OrderStatus
 from model.in_mem_db import Db
 from uuid import UUID
@@ -23,18 +25,49 @@ class PizzaService:
     def add_user(self, name: str, phone_number: str) -> User:
         if not (phone_number.startswith("+7") and len(phone_number) == 12 and phone_number[1:].isdigit()):
             raise ValueError("Invalid phone number format. Must be +79XXXXXXXXX")
+        existing_user = self.db.find_user_by_phone(phone_number)
+        if existing_user:
+            raise ValueError("User with this phone number already exists")
         user = User(user_id=uuid.uuid4(), name=name, phone_number=phone_number)
         self.db.save_user(user)
         return user
 
-    def add_pizza(self, order_id: UUID, pizza: Pizza):
+    # def add_pizza(self, order_id: UUID, pizza: Pizza):
+    #     order = self.db.find_order(order_id)
+    #     pizza = Pizza(
+    #         pizza_id=uuid.uuid4(),
+    #         base_pizza_id=pizza.base_pizza_id,
+    #         topping_ids=pizza.topping_ids
+    #     )
+    #     if not order:
+    #         raise LookupError("Order not found")
+    #     if order.status != OrderStatus.NEW:
+    #         raise PermissionError("Cannot add pizza to a non-new order")
+    #
+    #     order.pizzas.append(pizza)
+    #     self.db.save_order(order)
+    def add_pizza(self, order_id: UUID, pizza: Union[Pizza, PizzaIn]):
         order = self.db.find_order(order_id)
+
         if not order:
             raise LookupError("Order not found")
         if order.status != OrderStatus.NEW:
             raise PermissionError("Cannot add pizza to a non-new order")
 
-        order.pizzas.append(pizza)
+        new_pizza = Pizza(
+            pizza_id=uuid.uuid4(),
+            base_pizza_id=pizza.base_pizza_id,
+            topping_ids=pizza.topping_ids
+        )
+
+        # Сохраняем пиццу в БД ДО добавления её в заказ
+        self.db.save_pizza(new_pizza)
+
+        # Убедимся, что в order.pizzas нет None
+        # order.pizzas = [p for p in order.pizzas if p is not None]
+
+        order.pizzas.append(new_pizza)
+
         self.db.save_order(order)
 
     def remove_pizza(self, order_id: UUID, pizza_id: UUID):
@@ -44,6 +77,7 @@ class PizzaService:
         if order.status != OrderStatus.NEW:
             raise PermissionError("Order is being prepared and can't be modified")
         order.pizzas = [p for p in order.pizzas if p.pizza_id != pizza_id]
+        self.db.delete_pizza(pizza_id)
         self.db.save_order(order)
 
     def update_address(self, order_id: UUID, new_address: str):

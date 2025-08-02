@@ -13,6 +13,11 @@ class Db(ABC):
         pass
 
     @abstractmethod
+    def find_user_by_phone(self, phone_number: str) -> Optional[User]:
+        """Find user by phone_number"""
+        pass
+
+    @abstractmethod
     def find_order(self, order_id: UUID) -> Optional[Order]:
         """Find order by order id"""
         pass
@@ -55,4 +60,9 @@ class Db(ABC):
     @abstractmethod
     def save_pizza(self, pizza: Pizza) -> None:
         """Save pizza"""
+        pass
+
+    @abstractmethod
+    def delete_pizza(self, pizza_id: UUID) -> None:
+        """Delete pizza"""
         pass

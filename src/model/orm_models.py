@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column,
 from sqlalchemy.dialects.postgresql import UUID as UUID_DB, ARRAY
 from .entities import User, Order, Pizza, Topping, BasePizza
 from enum import Enum as EnumPy
-from typing import Annotated, List
+from typing import Annotated, List, Optional
 # from model.entities import User, Order, Pizza, BasePizza, Topping
 from uuid import UUID
 from model.entities import OrderStatus
@@ -14,6 +14,7 @@ uuid_pk = Annotated[UUID, mapped_column(UUID_DB(as_uuid=True), primary_key=True)
 
 class Base(DeclarativeBase):
     pass
+
 
 class UserOrm(Base):
     __tablename__ = "users"
@@ -70,7 +71,7 @@ class OrderOrm(Base):
 
     def __repr__(self):
         return (f"<OrderOrm(order_id={self.order_id}, status={self.status}, user={self.user}, user_id={self.user_id},"
-                f"pizzas={self.pizzas}, address={self.address})>")
+                f"pizzas={self.pizza_ids}, address={self.address})>")
 
 
 class PizzaOrm(Base):

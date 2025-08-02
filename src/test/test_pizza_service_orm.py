@@ -1,3 +1,4 @@
+import random
 from typing import final
 
 import pytest
@@ -22,7 +23,8 @@ def service(db):
 
 @pytest.fixture
 def user(service):
-    return service.add_user(name="Oliver", phone_number="+79161234567")
+    phone_number = f"+79{random.randint(100000000, 999999999)}"
+    return service.add_user(name="Oliver", phone_number=phone_number)
 
 
 # Фикстура создаёт базовую пиццу
@@ -126,9 +128,10 @@ def test_update_order_status(service, order):
 
 # Тест на валидность номера телефона
 def test_user_valid_phone(service):
-    user = service.add_user("Tom", "+79234567890")
+    phone_number = f"+79{random.randint(100000000, 999999999)}"
+    user = service.add_user("Tom", phone_number)
     assert user.name == "Tom"
-    assert user.phone_number == "+79234567890"
+    assert user.phone_number == phone_number
 
 
 # Тест на невалидный номер телефона

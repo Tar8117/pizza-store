@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 from model.db_interface import Db
 from model.entities import *
 from uuid import UUID
@@ -14,6 +14,12 @@ class InMemDb(Db):
 
     def find_user(self, user_id: UUID) -> User:
         return self.users.get(user_id)
+
+    def find_user_by_phone(self, phone_number: str) -> Optional[User]:
+        for user in self.users.values():
+            if user.phone_number == phone_number:
+                return user
+        return None
 
     def find_order(self, order_id: UUID) -> Order:
         return self.orders.get(order_id)
