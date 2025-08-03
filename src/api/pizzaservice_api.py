@@ -1,7 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from uuid import UUID
+from fastapi import APIRouter, Depends, HTTPException, Body
 from service.pizza_service import PizzaService
-from model.entities import Pizza
 from api.dependencies import get_pizza_service
 from api.schemas import *
 
@@ -10,7 +8,9 @@ router = APIRouter()
 
 
 @router.post("/users", response_model=UserOut, status_code=201)
-def create_user(user: UserCreate, service: PizzaService = Depends(get_pizza_service)):
+def create_user(user: UserCreate = Body(..., example={"name": "Иван", "phone_number": "+79001234567"}),
+                service: PizzaService = Depends(get_pizza_service)):
+
     try:
         return service.add_user(name=user.name, phone_number=user.phone_number)
     except ValueError as e:

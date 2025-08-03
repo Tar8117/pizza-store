@@ -1,12 +1,7 @@
 import random
-from typing import final
-
 import pytest
 import uuid
-
 from model.entities import OrderStatus, Pizza, BasePizza, Topping
-from model.in_mem_db import InMemDb
-from model.orm_models import BasePizzaOrm, ToppingOrm, UserOrm
 from model.sqlalchemy_db import SqlAlchemyDbSync
 from service.pizza_service import PizzaService
 
@@ -82,14 +77,18 @@ def test_create_order(service, user):
 def test_add_pizza(service, order, pizza):
     service.add_pizza(order.order_id, pizza)
     updated_order = service.db.find_order(order.order_id)
-    assert len(updated_order.pizzas) == 1
-    assert updated_order.pizzas[0].pizza_id == pizza.pizza_id
+    added_pizza = updated_order.pizzas[0]
+    assert added_pizza.base_pizza_id == pizza.base_pizza_id
+    assert added_pizza.topping_ids == [str(t) for t in pizza.topping_ids]
 
 
 # Тест добавления и удаления пиццы из заказа
 def test_remove_pizza(service, order, pizza):
     service.add_pizza(order.order_id, pizza)
-    service.remove_pizza(order.order_id, pizza.pizza_id)
+    updated_order = service.db.find_order(order.order_id)
+    assert len(updated_order.pizzas) == 1
+    added_pizza_id = updated_order.pizzas[0].pizza_id
+    service.remove_pizza(order.order_id, added_pizza_id)
     updated_order = service.db.find_order(order.order_id)
     assert len(updated_order.pizzas) == 0
 

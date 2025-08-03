@@ -1,10 +1,8 @@
-from sqlalchemy import Column, Enum, ForeignKey, Table, select, String
+from sqlalchemy import Enum, ForeignKey, String
 from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column, Session
 from sqlalchemy.dialects.postgresql import UUID as UUID_DB, ARRAY
 from .entities import User, Order, Pizza, Topping, BasePizza
-from enum import Enum as EnumPy
-from typing import Annotated, List, Optional
-# from model.entities import User, Order, Pizza, BasePizza, Topping
+from typing import Annotated, List
 from uuid import UUID
 from model.entities import OrderStatus
 

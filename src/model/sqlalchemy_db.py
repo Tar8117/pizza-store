@@ -1,5 +1,5 @@
 from typing import Optional
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import selectinload
 from sqlalchemy.dialects.postgresql import insert
 from uuid import UUID
 from sqlalchemy import select, delete

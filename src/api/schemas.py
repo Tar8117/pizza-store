@@ -1,12 +1,12 @@
 from uuid import UUID
-from typing import List, Optional
-from pydantic import BaseModel, Field
-from model.entities import OrderStatus, Pizza
+from typing import List
+from pydantic import BaseModel
+from model.entities import OrderStatus
 
 
 class UserCreate(BaseModel):
     name: str
-    phone_number: str = Field(..., example="+79001234567")
+    phone_number: str
 
 
 class UserOut(BaseModel):
