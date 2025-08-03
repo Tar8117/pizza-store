@@ -41,17 +41,12 @@ class SqlAlchemyDbSync(Db):
             )
 
     def find_pizza(self, pizza_id: UUID) -> Optional[Pizza]:
-        if not pizza_id:
-            print(f"[DEBUG] Skipping None pizza_id")
-            return None
         with sync_session_factory() as session:
             orm_pizza = session.get(PizzaOrm, pizza_id)
-            print(f"[DEBUG] Loaded pizza {pizza_id}: {orm_pizza}")
             return orm_pizza.to_entity() if orm_pizza else None
 
     def find_base_pizza(self, base_pizza_id: UUID) -> Optional[BasePizza]:
         with sync_session_factory() as session:
-            # return session.get(BasePizzaOrm, base_pizza_id)
             orm_base_pizza = session.get(BasePizzaOrm, base_pizza_id)
             return orm_base_pizza.to_entity() if orm_base_pizza else None
 

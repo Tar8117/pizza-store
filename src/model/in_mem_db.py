@@ -48,6 +48,8 @@ class InMemDb(Db):
     def save_base_pizza(self, base_pizza: BasePizza):
         self.base_pizzas[base_pizza.base_pizza_id] = base_pizza
 
-    # def delete_pizza(self, pizza_id: UUID):
-    #     if pizza_id in self.pizzas:
-    #         del self.pizzas[pizza_id]
+    def delete_pizza(self, pizza_id: UUID):
+        if pizza_id in self.pizzas:
+            del self.pizzas[pizza_id]
+            return pizza_id
+        return None
