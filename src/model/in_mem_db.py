@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict
 from model.db_interface import Db
 from model.entities import *
 from uuid import UUID
@@ -47,3 +47,7 @@ class InMemDb(Db):
 
     def save_base_pizza(self, base_pizza: BasePizza):
         self.base_pizzas[base_pizza.base_pizza_id] = base_pizza
+
+    # def delete_pizza(self, pizza_id: UUID):
+    #     if pizza_id in self.pizzas:
+    #         del self.pizzas[pizza_id]

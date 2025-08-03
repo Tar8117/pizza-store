@@ -30,7 +30,8 @@ class SqlAlchemyDbSync(Db):
             orm_order = res.scalar_one_or_none()
             if not orm_order:
                 return None
-            pizzas = [self.find_pizza(pizza_id) for pizza_id in orm_order.pizza_ids]
+            pizzas = [self.find_pizza(UUID(pizza_id)) for pizza_id in orm_order.pizza_ids]
+            print(f"[DEBUG] Raw pizza_ids from DB: {orm_order.pizza_ids}")
             return Order(
                 order_id=orm_order.order_id,
                 status=orm_order.status,
@@ -40,8 +41,12 @@ class SqlAlchemyDbSync(Db):
             )
 
     def find_pizza(self, pizza_id: UUID) -> Optional[Pizza]:
+        if not pizza_id:
+            print(f"[DEBUG] Skipping None pizza_id")
+            return None
         with sync_session_factory() as session:
             orm_pizza = session.get(PizzaOrm, pizza_id)
+            print(f"[DEBUG] Loaded pizza {pizza_id}: {orm_pizza}")
             return orm_pizza.to_entity() if orm_pizza else None
 
     def find_base_pizza(self, base_pizza_id: UUID) -> Optional[BasePizza]:
@@ -90,6 +95,8 @@ class SqlAlchemyDbSync(Db):
             session.commit()
 
     def save_order(self, order: Order) -> None:
+        for pizza in order.pizzas:
+            self.save_pizza(pizza)
         with sync_session_factory() as session:
             orm_order = OrderOrm.from_entity(order, session)
             stmt = insert(OrderOrm).values(
@@ -109,8 +116,6 @@ class SqlAlchemyDbSync(Db):
             )
             session.execute(stmt)
             session.commit()
-        for pizza in order.pizzas:
-            self.save_pizza(pizza)
 
     def save_topping(self, topping: Topping) -> None:
         with sync_session_factory() as session:

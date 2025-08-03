@@ -32,20 +32,6 @@ class PizzaService:
         self.db.save_user(user)
         return user
 
-    # def add_pizza(self, order_id: UUID, pizza: Pizza):
-    #     order = self.db.find_order(order_id)
-    #     pizza = Pizza(
-    #         pizza_id=uuid.uuid4(),
-    #         base_pizza_id=pizza.base_pizza_id,
-    #         topping_ids=pizza.topping_ids
-    #     )
-    #     if not order:
-    #         raise LookupError("Order not found")
-    #     if order.status != OrderStatus.NEW:
-    #         raise PermissionError("Cannot add pizza to a non-new order")
-    #
-    #     order.pizzas.append(pizza)
-    #     self.db.save_order(order)
     def add_pizza(self, order_id: UUID, pizza: Union[Pizza, PizzaIn]):
         order = self.db.find_order(order_id)
 
@@ -94,20 +80,33 @@ class PizzaService:
         order = self.db.find_order(order_id)
         if not order:
             raise LookupError("Order not found")
+
+        print(f"[DEBUG] Found order: {order.order_id}, pizzas: {len(order.pizzas)}")
+
         total_price = 0
         for pizza in order.pizzas:
+            print(
+                f"[DEBUG] Processing pizza: {pizza.pizza_id}, "
+                f"base_pizza_id: {pizza.base_pizza_id}, topping_ids: {pizza.topping_ids}")
+
             base_pizza = self.db.find_base_pizza(pizza.base_pizza_id)
             if not base_pizza:
                 raise LookupError(f"Base pizza {pizza.base_pizza_id} not found")
 
+            print(f"[DEBUG] Base pizza price: {base_pizza.price}")
             price = base_pizza.price
+
             for topping_id in pizza.topping_ids:
                 topping = self.db.find_topping(topping_id)
                 if not topping:
                     raise LookupError(f"Topping {topping_id} not found")
-
+                print(f"[DEBUG] Topping {topping_id} price: {topping.price}")
                 price += topping.price
+
+            print(f"[DEBUG] Pizza total price: {price}")
             total_price += price
+
+        print(f"[DEBUG] Total order price: {total_price}")
         return total_price
 
     def on_payment_complete(self, order_id: UUID):
