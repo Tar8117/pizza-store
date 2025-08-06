@@ -8,7 +8,7 @@ router = APIRouter()
 
 
 @router.post("/users", response_model=UserOut, status_code=201)
-def create_user(user: UserCreate = Body(..., example={"name": "Иван", "phone_number": "+79001234567"}),
+def create_user(user: UserCreate = Body(..., examples=[{"name": "Иван", "phone_number": "+79001234567"}]),
                 service: PizzaService = Depends(get_pizza_service)):
 
     try:
@@ -36,7 +36,7 @@ def get_order(order_id: UUID, service: PizzaService = Depends(get_pizza_service)
 @router.post("/orders/{order_id}/pizza", status_code=204)
 def add_pizza(order_id: UUID, pizza: PizzaIn, service: PizzaService = Depends(get_pizza_service)):
     try:
-        service.add_pizza(order_id, pizza)
+        service.add_pizza(order_id, pizza.to_entity())
     except LookupError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except PermissionError as e:

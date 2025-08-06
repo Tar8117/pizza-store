@@ -1,7 +1,7 @@
-from uuid import UUID
+from uuid import UUID, uuid4
 from typing import List
 from pydantic import BaseModel
-from model.entities import OrderStatus
+from model.entities import OrderStatus, Pizza
 
 
 class UserCreate(BaseModel):
@@ -18,6 +18,13 @@ class UserOut(BaseModel):
 class PizzaIn(BaseModel):
     base_pizza_id: UUID
     topping_ids: List[UUID]
+
+    def to_entity(self) -> Pizza:
+        return Pizza(
+            pizza_id=None,
+            base_pizza_id=self.base_pizza_id,
+            topping_ids=self.topping_ids
+        )
 
 
 class AddressUpdate(BaseModel):

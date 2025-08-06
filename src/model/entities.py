@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 
 
@@ -14,7 +14,7 @@ class OrderStatus(Enum):
 
 
 class Pizza:
-    def __init__(self, pizza_id: UUID, base_pizza_id: UUID, topping_ids: List[UUID]):
+    def __init__(self, pizza_id: Optional[UUID], base_pizza_id: UUID, topping_ids: List[UUID]):
         self.pizza_id = pizza_id
         self.base_pizza_id = base_pizza_id
         self.topping_ids = topping_ids

@@ -32,7 +32,7 @@ class PizzaService:
         self.db.save_user(user)
         return user
 
-    def add_pizza(self, order_id: UUID, pizza: Union[Pizza, PizzaIn]):
+    def add_pizza(self, order_id: UUID, pizza: Pizza):
         order = self.db.find_order(order_id)
 
         if not order:
