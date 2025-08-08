@@ -1,12 +1,10 @@
-from sqlalchemy import Column, Enum, ForeignKey, Table, select, String
+from sqlalchemy import Enum, ForeignKey, String
 from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column, Session
 from sqlalchemy.dialects.postgresql import UUID as UUID_DB, ARRAY
 from .entities import User, Order, Pizza, Topping, BasePizza
-from enum import Enum as EnumPy
 from typing import Annotated, List
-# from .entities import User, Order, Pizza, BasePizza, Topping
 from uuid import UUID
-from .entities import OrderStatus
+from model.entities import OrderStatus
 
 
 uuid_pk = Annotated[UUID, mapped_column(UUID_DB(as_uuid=True), primary_key=True)]
@@ -16,36 +14,12 @@ class Base(DeclarativeBase):
     pass
 
 
-# class OrderStatus(EnumPy):
-#     NEW = "NEW"
-#     ORDERED = "ORDERED"
-#     PREPARING = "PREPARING"
-#     READY = "READY"
-#     DELIVERING = "DELIVERING"
-#     DELIVERED = "DELIVERED"
-#     COMPLETED = "COMPLETED"
-
-
-pizza_topping = Table(
-    "pizza_topping",
-    Base.metadata,
-    Column("pizza_id", ForeignKey("pizzas.pizza_id", ondelete="CASCADE"), primary_key=True),
-    Column("topping_id", ForeignKey("toppings.topping_id", ondelete="CASCADE"), primary_key=True),
-)
-
-
 class UserOrm(Base):
     __tablename__ = "users"
 
     user_id: Mapped[uuid_pk]
     name: Mapped[str] = mapped_column(nullable=False)
     phone_number: Mapped[str] = mapped_column(nullable=False)
-    orders: Mapped[List["OrderOrm"]] = relationship(
-        "OrderOrm",
-        back_populates="user",
-        cascade="all, delete-orphan",
-        passive_deletes=True
-    )
 
     def to_entity(self) -> User:
         return User(
@@ -75,97 +49,49 @@ class OrderOrm(Base):
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.user_id", ondelete="CASCADE"))
     user: Mapped["UserOrm"] = relationship(
         "UserOrm",
-        back_populates="orders",
         passive_deletes=True,
     )
-    pizzas: Mapped[List["PizzaOrm"]] = relationship(
-        "PizzaOrm",
-        back_populates="order",
-        cascade="all, delete-orphan",
-        passive_deletes=True,
-    )
-    # pizzas: Mapped[str] = mapped_column(ARRAY(String))
-
-    def to_entity(self) -> Order:
-        return Order(
-            order_id=self.order_id,
-            status=OrderStatus(self.status.value),
-            user=self.user.to_entity(),
-            pizzas=[pizza.to_entity() for pizza in self.pizzas],
-            address=self.address
-        )
+    pizza_ids: Mapped[List[uuid_pk]] = mapped_column(ARRAY(String), nullable=False)
 
     @classmethod
     def from_entity(cls, order: Order, session: Session) -> "OrderOrm":
         user_orm = UserOrm.from_entity(order.user)
 
-        pizzas = [PizzaOrm.from_entity(pizza, session) for pizza in order.pizzas]
+        pizza_ids = [pizza.pizza_id for pizza in order.pizzas]
 
         return cls(
             order_id=order.order_id,
             status=OrderStatus(order.status.value),
             user=user_orm,
-            pizzas=pizzas,
+            pizza_ids=pizza_ids,
             address=order.address,
         )
 
     def __repr__(self):
         return (f"<OrderOrm(order_id={self.order_id}, status={self.status}, user={self.user}, user_id={self.user_id},"
-                f"pizzas={self.pizzas}, address={self.address})>")
+                f"pizzas={self.pizza_ids}, address={self.address})>")
 
 
 class PizzaOrm(Base):
     __tablename__ = "pizzas"
 
     pizza_id: Mapped[uuid_pk]
-    order_id: Mapped[UUID] = mapped_column(ForeignKey("orders.order_id", ondelete="CASCADE"))
-    order: Mapped["OrderOrm"] = relationship(
-        "OrderOrm",
-        back_populates="pizzas",
-        passive_deletes=True,
-    )
     base_pizza_id: Mapped[UUID] = mapped_column(ForeignKey("base_pizzas.base_pizza_id", ondelete="CASCADE"))
-    base_pizza: Mapped["BasePizzaOrm"] = relationship(
-        "BasePizzaOrm",
-        back_populates="pizzas",
-        passive_deletes=True,
-    )
-    toppings: Mapped[List["ToppingOrm"]] = relationship(
-        "ToppingOrm",
-        secondary=pizza_topping,
-        back_populates="pizzas",
-        passive_deletes=True
-    )
+    topping_ids: Mapped[list[uuid_pk]] = mapped_column(ARRAY(String), nullable=False)
 
     def to_entity(self) -> Pizza:
         return Pizza(
             pizza_id=self.pizza_id,
             base_pizza_id=self.base_pizza_id,
-            topping_ids=[topping.topping_id for topping in self.toppings]
+            topping_ids=self.topping_ids
         )
 
     @classmethod
     def from_entity(cls, pizza: Pizza, session: Session) -> "PizzaOrm":
-        base_pizza = session.execute(
-            select(BasePizzaOrm).where(BasePizzaOrm.base_pizza_id == pizza.base_pizza_id)
-        ).scalar_one_or_none()
-        if not base_pizza:
-            raise ValueError(f"BasePizza with id {pizza.base_pizza_id} not found")
-
-        toppings = []
-        if pizza.topping_ids:
-            toppings = session.execute(
-                select(ToppingOrm).where(ToppingOrm.topping_id.in_(pizza.topping_ids))
-            ).scalars().all()
-
-            missing_ids = set(pizza.topping_ids) - {t.topping_id for t in toppings}
-            if missing_ids:
-                raise ValueError(f"Toppings with ids {missing_ids} not found")
-
         return cls(
             pizza_id=pizza.pizza_id,
-            base_pizza=base_pizza,
-            toppings=toppings
+            base_pizza_id=pizza.base_pizza_id,
+            topping_ids=pizza.topping_ids
         )
 
     def __repr__(self):
@@ -178,11 +104,6 @@ class BasePizzaOrm(Base):
     base_pizza_id: Mapped[uuid_pk]
     name: Mapped[str] = mapped_column(nullable=False)
     price: Mapped[float] = mapped_column(nullable=False)
-    pizzas: Mapped[List["PizzaOrm"]] = relationship(
-        "PizzaOrm",
-        back_populates="base_pizza",
-        passive_deletes=True,
-    )
 
     def to_entity(self) -> BasePizza:
         return BasePizza(
@@ -209,12 +130,6 @@ class ToppingOrm(Base):
     topping_id: Mapped[uuid_pk]
     name: Mapped[str] = mapped_column(nullable=False)
     price: Mapped[float] = mapped_column(nullable=False)
-    pizzas: Mapped[List[PizzaOrm]] = relationship(
-        "PizzaOrm",
-        secondary=pizza_topping,
-        back_populates="toppings",
-        passive_deletes=True,
-    )
 
     def to_entity(self) -> Topping:
         return Topping(

@@ -1,6 +1,6 @@
-from typing import Dict
-from .db_interface import Db
-from .entities import *
+from typing import Dict, Optional
+from model.db_interface import Db
+from model.entities import *
 from uuid import UUID
 
 
@@ -14,6 +14,12 @@ class InMemDb(Db):
 
     def find_user(self, user_id: UUID) -> User:
         return self.users.get(user_id)
+
+    def find_user_by_phone(self, phone_number: str) -> Optional[User]:
+        for user in self.users.values():
+            if user.phone_number == phone_number:
+                return user
+        return None
 
     def find_order(self, order_id: UUID) -> Order:
         return self.orders.get(order_id)
@@ -41,3 +47,6 @@ class InMemDb(Db):
 
     def save_base_pizza(self, base_pizza: BasePizza):
         self.base_pizzas[base_pizza.base_pizza_id] = base_pizza
+
+    def delete_pizza(self, pizza_id: UUID):
+        self.pizzas.pop(pizza_id, None)

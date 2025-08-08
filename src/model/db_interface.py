@@ -1,6 +1,6 @@
 from typing import Optional
 from abc import ABC, abstractmethod
-from .entities import User, Order, Pizza, Topping, BasePizza
+from model.entities import User, Order, Pizza, Topping, BasePizza
 from uuid import UUID
 
 
@@ -10,6 +10,11 @@ class Db(ABC):
     @abstractmethod
     def find_user(self, user_id: UUID) -> Optional[User]:
         """Find user by id"""
+        pass
+
+    @abstractmethod
+    def find_user_by_phone(self, phone_number: str) -> Optional[User]:
+        """Find user by phone_number"""
         pass
 
     @abstractmethod
@@ -50,4 +55,14 @@ class Db(ABC):
     @abstractmethod
     def save_base_pizza(self, base_pizza: BasePizza) -> None:
         """Save base pizza"""
+        pass
+
+    @abstractmethod
+    def save_pizza(self, pizza: Pizza) -> None:
+        """Save pizza"""
+        pass
+
+    @abstractmethod
+    def delete_pizza(self, pizza_id: UUID) -> None:
+        """Delete pizza"""
         pass

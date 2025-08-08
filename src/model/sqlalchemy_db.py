@@ -1,62 +1,63 @@
 from typing import Optional
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import selectinload
 from sqlalchemy.dialects.postgresql import insert
 from uuid import UUID
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from .entities import User, Order, Pizza, Topping, BasePizza
-from .db_interface import Db
-from .orm_models import UserOrm, OrderOrm, PizzaOrm, BasePizzaOrm, ToppingOrm, pizza_topping
-from ..db_engines import sync_session_factory, async_session_factory  # type: ignore
+from sqlalchemy import select, delete
+from model.entities import User, Order, Pizza, Topping, BasePizza
+from model.db_interface import Db
+from model.orm_models import UserOrm, OrderOrm, PizzaOrm, BasePizzaOrm, ToppingOrm
+from db_engines import sync_session_factory, async_session_factory  # type: ignore
 
 
 class SqlAlchemyDbSync(Db):
-
     def find_user(self, user_id: UUID) -> Optional[User]:
         with sync_session_factory() as session:
-            # return session.get(UserOrm, user_id)
             orm_user = session.get(UserOrm, user_id)
             return orm_user.to_entity() if orm_user else None
+
+    def find_user_by_phone(self, phone_number: str) -> Optional[User]:
+        with sync_session_factory() as session:
+            stmt = select(UserOrm).where(UserOrm.phone_number == phone_number)
+            result = session.execute(stmt).scalar_one_or_none()
+            return result.to_entity() if result else None
 
     def find_order(self, order_id: UUID) -> Optional[Order]:
         with sync_session_factory() as session:
             stmt = select(OrderOrm).options(
                 selectinload(OrderOrm.user),
-                selectinload(OrderOrm.pizzas).selectinload(PizzaOrm.base_pizza),
-                selectinload(OrderOrm.pizzas).selectinload(PizzaOrm.toppings),
             ).where(OrderOrm.order_id == order_id)
             res = session.execute(stmt)
-            # return res.scalar_one_or_none()
             orm_order = res.scalar_one_or_none()
-            return orm_order.to_entity() if orm_order else None
+            if not orm_order:
+                return None
+            pizzas = [self.find_pizza(UUID(pizza_id)) for pizza_id in orm_order.pizza_ids]
+            print(f"[DEBUG] Raw pizza_ids from DB: {orm_order.pizza_ids}")
+            return Order(
+                order_id=orm_order.order_id,
+                status=orm_order.status,
+                user=orm_order.user,
+                pizzas=pizzas,
+                address=orm_order.address
+            )
 
     def find_pizza(self, pizza_id: UUID) -> Optional[Pizza]:
         with sync_session_factory() as session:
-            stmt = select(PizzaOrm).options(
-                selectinload(PizzaOrm.base_pizza),
-                selectinload(PizzaOrm.toppings),
-            ).where(PizzaOrm.pizza_id == pizza_id)
-            res = session.execute(stmt)
-            # return res.scalar_one_or_none()
-            orm_pizza = res.scalar_one_or_none()
+            orm_pizza = session.get(PizzaOrm, pizza_id)
             return orm_pizza.to_entity() if orm_pizza else None
 
     def find_base_pizza(self, base_pizza_id: UUID) -> Optional[BasePizza]:
         with sync_session_factory() as session:
-            # return session.get(BasePizzaOrm, base_pizza_id)
             orm_base_pizza = session.get(BasePizzaOrm, base_pizza_id)
             return orm_base_pizza.to_entity() if orm_base_pizza else None
 
     def find_topping(self, topping_id: UUID) -> Optional[Topping]:
         with sync_session_factory() as session:
-            # return session.get(ToppingOrm, topping_id)
             orm_topping = session.get(ToppingOrm, topping_id)
             return orm_topping.to_entity() if orm_topping else None
 
     def save_user(self, user: User) -> None:
         with sync_session_factory() as session:
             orm_user = UserOrm.from_entity(user)
-            # print(">>> saving user with:", user.user_id, type(user.user_id))
             stmt = insert(UserOrm).values(
                 user_id=orm_user.user_id,
                 name=orm_user.name,
@@ -71,21 +72,41 @@ class SqlAlchemyDbSync(Db):
             session.execute(stmt)
             session.commit()
 
+    def save_pizza(self, pizza: Pizza) -> None:
+        with sync_session_factory() as session:
+            orm_pizza = PizzaOrm.from_entity(pizza, session)
+            stmt = insert(PizzaOrm).values(
+                pizza_id=orm_pizza.pizza_id,
+                base_pizza_id=orm_pizza.base_pizza_id,
+                topping_ids=orm_pizza.topping_ids,
+            ).on_conflict_do_update(
+                index_elements=["pizza_id"],
+                set_={
+                    "base_pizza_id": orm_pizza.base_pizza_id,
+                    "topping_ids": orm_pizza.topping_ids,
+                }
+            )
+            session.execute(stmt)
+            session.commit()
+
     def save_order(self, order: Order) -> None:
+        for pizza in order.pizzas:
+            self.save_pizza(pizza)
         with sync_session_factory() as session:
             orm_order = OrderOrm.from_entity(order, session)
-            # print(">>> saving order with:", order.user_id, order.order_id)
             stmt = insert(OrderOrm).values(
                 order_id=orm_order.order_id,
                 status=orm_order.status.value,  # serialization of enum
                 address=orm_order.address,
                 user_id=orm_order.user.user_id,
+                pizza_ids=orm_order.pizza_ids,
             ).on_conflict_do_update(
                 index_elements=["order_id"],
                 set_={
                     "status": orm_order.status,
                     "address": orm_order.address,
                     "user_id": orm_order.user.user_id,
+                    "pizza_ids": orm_order.pizza_ids,
                 }
             )
             session.execute(stmt)
@@ -122,5 +143,11 @@ class SqlAlchemyDbSync(Db):
                     "price": orm_base_pizza.price,
                 }
             )
+            session.execute(stmt)
+            session.commit()
+
+    def delete_pizza(self, pizza_id: UUID) -> None:
+        with sync_session_factory() as session:
+            stmt = delete(PizzaOrm).where(PizzaOrm.pizza_id == pizza_id)
             session.execute(stmt)
             session.commit()
