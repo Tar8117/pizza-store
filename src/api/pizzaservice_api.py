@@ -14,7 +14,7 @@ def create_user(user: UserCreate = Body(..., examples=[{"name": "Иван", "pho
     try:
         return service.add_user(name=user.name, phone_number=user.phone_number)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=422, detail=str(e))
 
 
 @router.post("/orders/{user_id}", response_model=OrderOut)
