@@ -44,7 +44,7 @@ API для пиццерии.
 
 Создайте базу данных (через psql):
 
-createdb pizza_db
+`createdb pizza_db`
 
 ## Создание таблиц
 
